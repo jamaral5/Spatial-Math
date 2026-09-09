@@ -34,6 +34,22 @@ public class UIManager : MonoBehaviour
         // box is focused. The handler receives whatever text was in the box.
         if (equationInput != null)
             equationInput.onSubmit.AddListener(OnEquationSubmitted);
+
+        ResetStatus();
+    }
+
+    /// <summary>
+    /// Blanks the status line. Nothing has been plotted yet when the app opens, so any
+    /// leftover placeholder text sitting in the Inspector must not survive into play.
+    /// This also drops the TMP text style (the scene had "Quote" on it, which is what
+    /// rendered the message oversized and italic) so status text reads as plain UI.
+    /// </summary>
+    private void ResetStatus()
+    {
+        if (statusText == null) return;
+
+        statusText.textStyle = TMPro.TMP_Style.NormalStyle;
+        statusText.text = "";
     }
 
     // ─── Preset buttons ────────────────────────────────────────────────
@@ -75,6 +91,15 @@ public class UIManager : MonoBehaviour
         // Keep the input box showing the current equation (handy for the preset buttons).
         if (equationInput != null && equationInput.text != equation)
             equationInput.SetTextWithoutNotify(equation);
+
+        // An empty box means "clear the graph", not "plot nothing successfully" — so
+        // wipe the surface and the status line instead of reporting a plot that isn't there.
+        if (string.IsNullOrWhiteSpace(equation))
+        {
+            graphManager.ClearSlot(targetSlot);
+            ResetStatus();
+            return;
+        }
 
         // SetEquation returns true if EquationParser understood the text. A typo like
         // "sin(x" (missing parenthesis) returns false instead of crashing.

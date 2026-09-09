@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using System;
 
 [RequireComponent(typeof(MeshFilter))]
@@ -20,14 +21,34 @@ public class GraphRenderer : MonoBehaviour
     public Material graphMaterial;
     public Gradient colorGradient;
 
+    [Tooltip("How solid the surface looks. 0 = invisible, 1 = fully opaque.")]
+    [Range(0f, 1f)]
+    public float opacity = 0.65f;
+
     private Func<float, float, float> equationFunc;
     private Mesh mesh;
     private string currentEquation = "";
 
     private float minY, maxY;
-    
+
     private MeshRenderer meshRenderer;
     private MeshFilter meshFilter;
+
+    // Shader property IDs, looked up once. Cheaper than passing strings every frame
+    // while the user drags the opacity slider.
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorId     = Shader.PropertyToID("_Color");
+    private static readonly int SurfaceId   = Shader.PropertyToID("_Surface");
+    private static readonly int BlendId     = Shader.PropertyToID("_Blend");
+    private static readonly int SrcBlendId  = Shader.PropertyToID("_SrcBlend");
+    private static readonly int DstBlendId  = Shader.PropertyToID("_DstBlend");
+    private static readonly int ZWriteId    = Shader.PropertyToID("_ZWrite");
+    private static readonly int AlphaClipId = Shader.PropertyToID("_AlphaClip");
+
+    // Our private copy of graphMaterial, plus the asset it was copied from so we only
+    // re-copy when this slot is actually handed a different material.
+    private Material runtimeMaterial;
+    private Material materialSource;
 
     void Awake()
     {
@@ -61,14 +82,98 @@ public class GraphRenderer : MonoBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        // runtimeMaterial is created with 'new', so nothing else will clean it up.
+        if (runtimeMaterial != null) Destroy(runtimeMaterial);
+    }
+
+    /// <summary>
+    /// Gives this graph its OWN copy of the assigned material. Opacity is stored on the
+    /// material, so without a copy, dragging the slider would permanently edit the
+    /// shared .mat asset on disk and fade every graph slot at the same time.
+    /// </summary>
     private void ApplyMaterial()
     {
         if (meshRenderer == null)
             meshRenderer = GetComponent<MeshRenderer>();
 
-        if (graphMaterial != null)
-            meshRenderer.sharedMaterial = graphMaterial;
+        if (graphMaterial == null) return;
+
+        if (runtimeMaterial == null || materialSource != graphMaterial)
+        {
+            if (runtimeMaterial != null) Destroy(runtimeMaterial);
+
+            runtimeMaterial = new Material(graphMaterial);
+            runtimeMaterial.name = graphMaterial.name + " (runtime copy)";
+            materialSource = graphMaterial;
+
+            MakeTransparent(runtimeMaterial);
+        }
+
+        meshRenderer.sharedMaterial = runtimeMaterial;
+        ApplyOpacity();
     }
+
+    /// <summary>
+    /// Switches a URP material into alpha-blended mode. An opaque material throws the
+    /// alpha channel away, so without this the opacity slider would silently do nothing
+    /// whenever the assigned material was not already set to Transparent.
+    /// </summary>
+    private static void MakeTransparent(Material m)
+    {
+        SetFloatIfPresent(m, SurfaceId,   1f);                                 // 0 = Opaque, 1 = Transparent
+        SetFloatIfPresent(m, BlendId,     0f);                                 // 0 = Alpha blend
+        SetFloatIfPresent(m, SrcBlendId,  (float)BlendMode.SrcAlpha);
+        SetFloatIfPresent(m, DstBlendId,  (float)BlendMode.OneMinusSrcAlpha);
+        SetFloatIfPresent(m, AlphaClipId, 0f);
+
+        m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        m.DisableKeyword("_ALPHAPREMULTIPLY_ON");   // we write straight alpha, not premultiplied
+        m.DisableKeyword("_ALPHATEST_ON");
+
+        m.SetOverrideTag("RenderType", "Transparent");
+        m.renderQueue = (int)RenderQueue.Transparent;
+    }
+
+    /// <summary>Writes the current opacity into the material alpha channel.</summary>
+    private void ApplyOpacity()
+    {
+        if (runtimeMaterial == null) return;
+
+        // Only alpha changes here. RGB stays whatever the material was authored with.
+        if (runtimeMaterial.HasProperty(BaseColorId))
+        {
+            Color c = runtimeMaterial.GetColor(BaseColorId);
+            c.a = opacity;
+            runtimeMaterial.SetColor(BaseColorId, c);
+        }
+        if (runtimeMaterial.HasProperty(ColorId))
+        {
+            Color c = runtimeMaterial.GetColor(ColorId);
+            c.a = opacity;
+            runtimeMaterial.SetColor(ColorId, c);
+        }
+
+        // At full opacity there is nothing to see through, so let the surface write
+        // depth again. That stops a folded graph from showing its own far side through
+        // its near side, which is the usual artifact of a transparent mesh.
+        SetFloatIfPresent(runtimeMaterial, ZWriteId, opacity >= 0.99f ? 1f : 0f);
+    }
+
+    private static void SetFloatIfPresent(Material m, int propertyId, float value)
+    {
+        if (m.HasProperty(propertyId)) m.SetFloat(propertyId, value);
+    }
+
+    /// <summary>Fades this graph. 0 = invisible, 1 = solid. Cheap enough to call every frame.</summary>
+    public void SetOpacity(float value)
+    {
+        opacity = Mathf.Clamp01(value);
+        ApplyOpacity();
+    }
+
+    public float GetOpacity() => opacity;
 
     public bool SetEquation(string equation)
     {

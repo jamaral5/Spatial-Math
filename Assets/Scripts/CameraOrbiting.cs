@@ -20,6 +20,9 @@ public class OrbitCameraController : MonoBehaviour
     private float xAngle = 0f;
     private float yAngle = 20f;
 
+    // Whether the drag currently in progress began on top of a UI panel.
+    private bool dragStartedOverUI;
+
     void Start()
     {
         Vector3 angles = transform.eulerAngles;
@@ -38,17 +41,25 @@ public class OrbitCameraController : MonoBehaviour
     {
         if (target == null) return;
 
+        // Decide ONCE, on the frame the button goes down, whether this drag belongs to
+        // the UI. Re-checking every frame would abort an orbit the moment the cursor
+        // happened to sweep across a panel, and would still let a slider drag spin the
+        // camera the instant the pointer slipped off the handle.
+        if (Input.GetMouseButtonDown(0))
+            dragStartedOverUI = PointerOverUI.AtMouse();
+
         // Left mouse drag to rotate
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(0) && !dragStartedOverUI)
         {
             xAngle += Input.GetAxis("Mouse X") * xSpeed * Time.deltaTime;
             yAngle -= Input.GetAxis("Mouse Y") * ySpeed * Time.deltaTime;
             yAngle = Mathf.Clamp(yAngle, minYAngle, maxYAngle);
         }
 
-        // Scroll wheel to zoom
+        // Scroll wheel to zoom. Unlike the drag this is checked live: the wheel has no
+        // press-and-hold, so each notch is judged on where the cursor is right now.
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (Mathf.Abs(scroll) > 0.0001f)
+        if (Mathf.Abs(scroll) > 0.0001f && !PointerOverUI.AtMouse())
         {
             distance -= scroll * zoomSpeed;
             distance = Mathf.Clamp(distance, minDistance, maxDistance);

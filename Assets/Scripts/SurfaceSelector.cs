@@ -16,6 +16,11 @@ public class SurfacePointSelector : MonoBehaviour
         // Only act on the frame the left mouse button is first pressed down.
         if (Input.GetMouseButtonDown(0))
         {
+            // Ignore clicks that landed on the UI (the equation box, the opacity slider).
+            // Without this, grabbing the slider also drops a tangent plane behind it.
+            if (PointerOverUI.AtMouse())
+                return;
+
             // Build a ray from the camera through the mouse position on screen.
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;

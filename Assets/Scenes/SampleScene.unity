@@ -661,7 +661,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 500418236}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
@@ -674,7 +674,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Enter text...
+  m_text: type an equation to get started!
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -764,6 +764,7 @@ GameObject:
   m_Component:
   - component: {fileID: 519356182}
   - component: {fileID: 519356181}
+  - component: {fileID: 519356183}
   m_Layer: 0
   m_Name: UIManager
   m_TagString: Untagged
@@ -802,6 +803,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519356183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519356180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 904712b64055aa141bd2b43838660a66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GraphOpacityUI
+  graphManager: {fileID: 0}
+  targetCanvas: {fileID: 0}
+  slider: {fileID: 0}
+  minOpacity: 0.05
+  maxOpacity: 1
+  panelSize: {x: 220, y: 62}
+  panelOffset: {x: 0, y: -190}
+  panelColor: {r: 0.05, g: 0.07, b: 0.11, a: 0.78}
+  textColor: {r: 0.82, g: 0.88, b: 0.96, a: 1}
+  grooveColor: {r: 1, g: 1, b: 1, a: 0.16}
+  fillColor: {r: 0.35, g: 0.7, b: 1, a: 0.95}
+  handleColor: {r: 0.85, g: 0.93, b: 1, a: 1}
 --- !u!1 &667559777
 GameObject:
   m_ObjectHideFlags: 0
@@ -905,6 +930,9 @@ MonoBehaviour:
   meshResolution: 60
   graphRange: 5
   maxYClamp: 30
+  graphOpacity: 0.65
+  plotOnStart: 0
+  startupEquation: sin(x) * cos(y)
   axisRenderer: {fileID: 844162017}
   graphContainer: {fileID: 1396308762}
 --- !u!1 &725122061
@@ -946,6 +974,65 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 725122061}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &786599374
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 786599376}
+  - component: {fileID: 786599375}
+  m_Layer: 0
+  m_Name: SceneBackdrop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &786599375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786599374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a64ac7ba7e300004795aa92baeb04859, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneBackdrop
+  skyboxShader: {fileID: 0}
+  gridShader: {fileID: 0}
+  skyTopColor: {r: 0.02, g: 0.028, b: 0.07, a: 1}
+  skyHorizonColor: {r: 0.07, g: 0.12, b: 0.21, a: 1}
+  skyBottomColor: {r: 0.01, g: 0.012, b: 0.022, a: 1}
+  skyFalloff: 1.4
+  overrideAmbientLight: 1
+  ambientColor: {r: 0.28, g: 0.3, b: 0.36, a: 1}
+  showGrid: 1
+  gridExtent: 26
+  cellSize: 1
+  majorLineEvery: 5
+  gridHeight: -5
+  minorLineColor: {r: 0.38, g: 0.48, b: 0.62, a: 0.16}
+  majorLineColor: {r: 0.45, g: 0.66, b: 0.92, a: 0.4}
+--- !u!4 &786599376
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786599374}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1252,7 +1339,7 @@ MonoBehaviour:
   m_CaretColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_CustomCaretColor: 0
   m_SelectionColor: {r: 0.65882355, g: 0.80784315, b: 1, a: 0.7529412}
-  m_Text: Type an equation, e.g. sin(x)*cos(y)
+  m_Text: 
   m_CaretBlinkRate: 0.85
   m_CaretWidth: 1
   m_ReadOnly: 0
@@ -1305,7 +1392,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Graph plotted.
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1327,13 +1414,13 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 93368250
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 16
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1574,7 +1661,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Type an equation, e.g. sin(x)*cos(y)\u200B"
+  m_text: "\u200B"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2040,3 +2127,4 @@ SceneRoots:
   - {fileID: 725122063}
   - {fileID: 1249004412}
   - {fileID: 1944362058}
+  - {fileID: 786599376}
