@@ -26,11 +26,18 @@ public class GraphOpacityUI : MonoBehaviour
     [Range(0f, 1f)] public float maxOpacity = 1f;
 
     [Header("Generated Panel Layout")]
-    public Vector2 panelSize = new Vector2(220f, 62f);
+    [Tooltip("Which corner or edge of the screen the panel hangs off. (0,1) is top-left, " +
+             "(0.5,1) top-centre, (1,0) bottom-right.")]
+    public Vector2 anchor = new Vector2(0.5f, 1f);
+
+    public Vector2 panelSize = new Vector2(320f, 76f);
+
+    [Tooltip("Point size of the 'Graph opacity NN%' readout.")]
+    public float readoutFontSize = 18f;
 
     [Tooltip("Pixels from the top-left corner of the canvas. Negative Y moves it down, " +
              "clear of the equation panel above it.")]
-    public Vector2 panelOffset = new Vector2(0f, -190f);
+    public Vector2 panelOffset = new Vector2(0f, -16f);
 
     [Header("Generated Panel Colors")]
     public Color panelColor  = new Color(0.05f, 0.07f, 0.11f, 0.78f);
@@ -86,6 +93,24 @@ public class GraphOpacityUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Re-applies the layout fields while the game is running, so nudging Panel Size or
+    /// Panel Offset in the Inspector during Play mode moves the panel immediately —
+    /// no stopping and restarting to see the result. The values live on this component,
+    /// so unlike editing the generated objects they also survive leaving Play mode.
+    /// </summary>
+    void OnValidate()
+    {
+        if (!Application.isPlaying || builtPanel == null) return;
+
+        UIKit.Corner(builtPanel, anchor, panelSize, panelOffset);
+        if (readout != null)
+        {
+            readout.fontSize = readoutFontSize;
+            readout.rectTransform.offsetMin = new Vector2(12f, -(readoutFontSize + 16f));
+        }
+    }
+
     void OnDestroy()
     {
         if (graphManager != null) graphManager.OnOpacityChanged -= HandleOpacityChangedElsewhere;
@@ -134,10 +159,7 @@ public class GraphOpacityUI : MonoBehaviour
 
         // ── Panel background ──────────────────────────────────────────
         RectTransform panelRect = NewUIObject("OpacityPanel", targetCanvas.transform);
-        panelRect.anchorMin = panelRect.anchorMax = new Vector2(0f, 1f);   // top-left corner
-        panelRect.pivot = new Vector2(0f, 1f);
-        panelRect.anchoredPosition = panelOffset;
-        panelRect.sizeDelta = panelSize;
+        UIKit.Corner(panelRect, anchor, panelSize, panelOffset);
 
         builtPanel = panelRect;
 
@@ -151,11 +173,11 @@ public class GraphOpacityUI : MonoBehaviour
         labelRect.anchorMin = new Vector2(0f, 1f);
         labelRect.anchorMax = new Vector2(1f, 1f);
         labelRect.pivot = new Vector2(0.5f, 1f);
-        labelRect.offsetMin = new Vector2(12f, -28f);    // left inset, 28px down from the top
-        labelRect.offsetMax = new Vector2(-12f, -8f);    // right inset, 8px down from the top
+        labelRect.offsetMin = new Vector2(12f, -(readoutFontSize + 16f));
+        labelRect.offsetMax = new Vector2(-12f, -8f);
 
         readout = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
-        readout.fontSize = 14f;
+        readout.fontSize = readoutFontSize;
         readout.color = textColor;
         readout.alignment = TextAlignmentOptions.Left;
         readout.raycastTarget = false;

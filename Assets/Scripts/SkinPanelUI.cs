@@ -19,9 +19,17 @@ public class SkinPanelUI : MonoBehaviour
     public Canvas targetCanvas;
 
     [Header("Layout")]
-    public Vector2 buttonSize = new Vector2(150f, 42f);
-    public Vector2 buttonOffset = new Vector2(16f, 16f);
-    public Vector2 panelSize = new Vector2(230f, 396f);
+    [Tooltip("Which corner of the screen the button hangs off. (0,1) is top-left, " +
+             "(0,0) bottom-left. The list opens away from that edge.")]
+    public Vector2 anchor = new Vector2(0f, 1f);
+
+    public Vector2 buttonSize = new Vector2(170f, 44f);
+    public Vector2 buttonOffset = new Vector2(16f, -212f);
+    public Vector2 panelSize = new Vector2(240f, 372f);
+
+    [Header("Type Sizes")]
+    public float buttonFontSize = 19f;
+    public float entryFontSize = 16f;
 
     [Tooltip("How many times a pattern repeats across a custom uploaded image.")]
     public float customImageTiling = 1f;
@@ -53,6 +61,30 @@ public class SkinPanelUI : MonoBehaviour
         });
     }
 
+    /// <summary>Live layout tweaking during Play mode. See GraphOpacityUI.OnValidate.</summary>
+    void OnValidate()
+    {
+        if (!Application.isPlaying || button == null || panel == null) return;
+
+        PlaceWidgets();
+    }
+
+    /// <summary>
+    /// Positions the button and its list. Anchored to the top of the screen the list
+    /// drops downward; anchored to the bottom it rises, so it never runs off-screen.
+    /// </summary>
+    private void PlaceWidgets()
+    {
+        UIKit.Corner(button, anchor, buttonSize, buttonOffset);
+
+        bool opensDownward = anchor.y > 0.5f;
+        float gap = buttonSize.y + 8f;
+
+        UIKit.Corner(panel, anchor, panelSize,
+                     new Vector2(buttonOffset.x,
+                                 opensDownward ? buttonOffset.y - gap : buttonOffset.y + gap));
+    }
+
     void OnDestroy()
     {
         if (customTexture != null) Destroy(customTexture);
@@ -63,15 +95,15 @@ public class SkinPanelUI : MonoBehaviour
     private void Build()
     {
         // ── The bottom-left button ────────────────────────────────────
-        Button toggle = UIKit.TextButton("SkinsButton", targetCanvas.transform, "Skins", 17f, UIKit.NeonSoft);
+        Button toggle = UIKit.TextButton("SkinsButton", targetCanvas.transform, "Skins",
+                                         buttonFontSize, UIKit.NeonSoft);
         button = toggle.GetComponent<RectTransform>();
-        UIKit.Corner(button, new Vector2(0f, 0f), buttonSize, buttonOffset);
         toggle.onClick.AddListener(TogglePanel);
 
-        // ── The panel it opens, stacked directly above it ─────────────
+        // ── The list it opens, stacked clear of the button ────────────
         panel = UIKit.NeonPanel("SkinPanel", targetCanvas.transform, UIKit.PanelDark, UIKit.NeonSoft);
-        UIKit.Corner(panel, new Vector2(0f, 0f), panelSize,
-                     new Vector2(buttonOffset.x, buttonOffset.y + buttonSize.y + 8f));
+
+        PlaceWidgets();
 
         RectTransform column = UIKit.Stretch(UIKit.NewRect("Column", panel), 12f);
         var layout = column.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -99,8 +131,8 @@ public class SkinPanelUI : MonoBehaviour
 
     private void AddEntry(Transform parent, string label, System.Action action)
     {
-        Button entry = UIKit.TextButton(label, parent, label, 14f, new Color(1f, 1f, 1f, 0.10f));
-        entry.gameObject.AddComponent<LayoutElement>().preferredHeight = 30f;
+        Button entry = UIKit.TextButton(label, parent, label, entryFontSize, new Color(1f, 1f, 1f, 0.10f));
+        entry.gameObject.AddComponent<LayoutElement>().preferredHeight = entryFontSize + 16f;
         entry.onClick.AddListener(() => action?.Invoke());
     }
 

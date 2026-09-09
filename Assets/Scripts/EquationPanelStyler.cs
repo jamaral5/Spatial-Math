@@ -39,6 +39,9 @@ public class EquationPanelStyler : MonoBehaviour
     public float inputFontSize = 20f;
     public float statusFontSize = 15f;
 
+    /// <summary>Vertical space the prompt line occupies, derived from its type size.</summary>
+    private float PromptRow => promptFontSize + 18f;
+
     void Start()
     {
         Resolve();
@@ -51,9 +54,8 @@ public class EquationPanelStyler : MonoBehaviour
         }
 
         StripBackingPlate();
-        PlaceInCorner();
         StyleInput();
-        StyleText();
+        ApplyLayout();
 
         // Nothing to type into until the user has entered.
         equationPanel.gameObject.SetActive(false);
@@ -137,15 +139,33 @@ public class EquationPanelStyler : MonoBehaviour
         glowImage.color = glowColor;
         glowImage.raycastTarget = false;
 
-        var inputRect = equationInput.transform as RectTransform;
-        if (inputRect != null)
+    }
+
+    /// <summary>
+    /// Everything that can safely be re-run. Kept apart from StyleInput, which CREATES
+    /// the glow child — running that twice would stack a second glow on top.
+    /// </summary>
+    private void ApplyLayout()
+    {
+        PlaceInCorner();
+
+        if (equationInput != null && equationInput.transform is RectTransform inputRect)
         {
             inputRect.anchorMin = new Vector2(0f, 1f);
             inputRect.anchorMax = new Vector2(1f, 1f);
             inputRect.pivot = new Vector2(0.5f, 1f);
-            inputRect.offsetMin = new Vector2(0f, -inputHeight - 38f);
-            inputRect.offsetMax = new Vector2(0f, -38f);
+            inputRect.offsetMin = new Vector2(0f, -inputHeight - PromptRow);
+            inputRect.offsetMax = new Vector2(0f, -PromptRow);
         }
+
+        StyleText();
+    }
+
+    /// <summary>Live layout tweaking during Play mode. See GraphOpacityUI.OnValidate.</summary>
+    void OnValidate()
+    {
+        if (!Application.isPlaying || equationPanel == null) return;
+        ApplyLayout();
     }
 
     private void StyleText()
@@ -159,7 +179,7 @@ public class EquationPanelStyler : MonoBehaviour
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(0.5f, 1f);
-            rect.offsetMin = new Vector2(4f, -32f);
+            rect.offsetMin = new Vector2(4f, -(promptFontSize + 12f));
             rect.offsetMax = new Vector2(-4f, -6f);
         }
 
@@ -190,8 +210,8 @@ public class EquationPanelStyler : MonoBehaviour
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(0.5f, 1f);
-            rect.offsetMin = new Vector2(4f, -inputHeight - 92f);
-            rect.offsetMax = new Vector2(-4f, -inputHeight - 46f);
+            rect.offsetMin = new Vector2(4f, -inputHeight - PromptRow - statusFontSize - 26f);
+            rect.offsetMax = new Vector2(-4f, -inputHeight - PromptRow - 8f);
         }
     }
 }

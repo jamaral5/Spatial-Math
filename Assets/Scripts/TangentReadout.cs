@@ -58,6 +58,13 @@ public class TangentReadout : MonoBehaviour
         tangentPlaneRenderer.OnTangentPlaneCleared += Hide;
     }
 
+    /// <summary>Live layout tweaking during Play mode. See GraphOpacityUI.OnValidate.</summary>
+    void OnValidate()
+    {
+        if (!Application.isPlaying || panel == null) return;
+        UIKit.Corner(panel, new Vector2(1f, 1f), panelSize, panelOffset);
+    }
+
     void OnDestroy()
     {
         if (tangentPlaneRenderer == null) return;

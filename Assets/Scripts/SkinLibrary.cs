@@ -31,6 +31,17 @@ public static class SkinLibrary
 
     private static List<GraphSkin> presets;
 
+    /// <summary>
+    /// Drops the generated textures at the start of every play session, so they are
+    /// rebuilt rather than reused after Unity destroys them on exiting play mode.
+    /// Matters when Domain Reload is disabled. See UIKit.ResetCaches.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetCaches()
+    {
+        presets = null;
+    }
+
     public static List<GraphSkin> Presets()
     {
         if (presets != null) return presets;

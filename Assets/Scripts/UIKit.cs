@@ -20,6 +20,22 @@ public static class UIKit
     public static readonly Color NeonSoft   = new Color(1.00f, 0.82f, 0.29f, 0.55f);
     public static readonly Color PanelDark  = new Color(0.04f, 0.06f, 0.10f, 0.92f);
 
+    /// <summary>
+    /// Clears the cached font and sprites at the start of every play session.
+    ///
+    /// They are runtime objects flagged DontSave, so Unity destroys them when play mode
+    /// ends. With Enter Play Mode Options set to skip Domain Reload the static fields
+    /// would survive and point at those corpses, and the UI would come back unstyled.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetCaches()
+    {
+        serifFont = null;
+        serifAttempted = false;
+        roundedFill = null;
+        neonOutline = null;
+    }
+
     // ─── Canvas lookup ─────────────────────────────────────────────────
 
     /// <summary>
