@@ -3,15 +3,14 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// The title screen shown on launch. Built entirely at runtime on its own Canvas, above
-/// everything else, and destroyed when the user presses Enter.
+/// The title screen shown on launch: masthead and an Enter button, nothing else.
 ///
-/// It does not need to disable the graph scripts to hold input back: the full-screen
-/// backdrop is a raycast target, so PointerOverUI reports "over UI" everywhere, and the
-/// orbit camera and surface picker already stand down when that is true.
+/// It also acts as the gate for the rest of the interface. Every other panel starts
+/// hidden and calls WhenDismissed to be shown, so the app opens on a clean title card
+/// rather than on a screen full of controls.
 ///
-/// The copy is deliberately kept in the fields below so it can be reworded in the
-/// Inspector without touching code.
+/// The canvas is built in Awake, not Start, so that by the time any other component's
+/// Start runs it already exists and UIKit.FindSceneCanvas can tell the two apart.
 /// </summary>
 [AddComponentMenu("Spatial Math/Start Screen")]
 public class StartScreen : MonoBehaviour
@@ -20,24 +19,6 @@ public class StartScreen : MonoBehaviour
     public string title = "Spatial Math";
     public string subtitle = "A learning solution by Jake Amaral";
 
-    [Header("Body")]
-    public string sectionOneHeading = "What it is";
-
-    [TextArea(2, 5)]
-    public string sectionOneBody =
-        "A three-dimensional graphing calculator. Type any function of x and y and it " +
-        "becomes a surface you can walk around, so the shape of an equation is something " +
-        "you look at rather than imagine.";
-
-    public string sectionTwoHeading = "What you can do";
-
-    [TextArea(3, 8)]
-    public string sectionTwoBody =
-        "Plot any equation in real time — sin, cos, powers, roots and more\n" +
-        "Orbit and zoom with the mouse to read the surface from any angle\n" +
-        "Right-click the surface to render a tangent plane and read its equation\n" +
-        "Fade the surface with the opacity slider to see the axes through it";
-
     [Header("Button")]
     public string buttonLabel = "Enter";
 
@@ -45,29 +26,73 @@ public class StartScreen : MonoBehaviour
     [Tooltip("Also dismiss the screen when the Return key is pressed.")]
     public bool acceptReturnKey = true;
 
-    private GameObject screenRoot;
-    private bool dismissed;
+    // ─── Gate ──────────────────────────────────────────────────────────
+    // Static so panels can ask about the title screen without holding a reference to it.
 
-    void Start()
+    /// <summary>The title screen's own canvas, so scene lookups can skip it.</summary>
+    public static Canvas OverlayCanvas { get; private set; }
+
+    /// <summary>True once a start screen has registered itself this session.</summary>
+    public static bool Exists { get; private set; }
+
+    /// <summary>True once the user has entered.</summary>
+    public static bool Dismissed { get; private set; }
+
+    private static System.Action pending;
+
+    /// <summary>
+    /// Runs the action when the user presses Enter — or immediately if there is no start
+    /// screen in the scene, so removing this component never leaves the app unusable.
+    /// </summary>
+    public static void WhenDismissed(System.Action action)
     {
+        if (action == null) return;
+
+        if (!Exists || Dismissed)
+        {
+            action();
+            return;
+        }
+
+        pending += action;
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+
+    private GameObject screenRoot;
+
+    void Awake()
+    {
+        // Reset explicitly. With Enter Play Mode Options set to skip domain reload,
+        // statics survive between play sessions and would otherwise start out stale.
+        Exists = true;
+        Dismissed = false;
+        pending = null;
+        OverlayCanvas = null;
+
         Build();
     }
 
     void Update()
     {
-        if (dismissed || !acceptReturnKey) return;
+        if (Dismissed || !acceptReturnKey) return;
 
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             Dismiss();
     }
 
-    /// <summary>Tears the title screen down. Hooked to the Enter button.</summary>
+    /// <summary>Tears the title screen down and releases everything waiting on it.</summary>
     public void Dismiss()
     {
-        if (dismissed) return;
-        dismissed = true;
+        if (Dismissed) return;
+        Dismissed = true;
 
         if (screenRoot != null) Destroy(screenRoot);
+        OverlayCanvas = null;
+
+        System.Action waiting = pending;
+        pending = null;
+        waiting?.Invoke();
     }
 
     // ───────────────────────────────────────────────────────────────────
@@ -82,6 +107,7 @@ public class StartScreen : MonoBehaviour
         var canvas = screenRoot.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 500;
+        OverlayCanvas = canvas;
 
         var scaler = screenRoot.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -97,83 +123,52 @@ public class StartScreen : MonoBehaviour
         backdropImage.color = new Color(0.020f, 0.030f, 0.055f, 0.98f);
         backdropImage.raycastTarget = true;
 
-        // A centred column keeps the text off the screen edges at any aspect ratio.
+        // A centred column keeps the masthead off the screen edges at any aspect ratio.
         RectTransform column = UIKit.NewRect("Column", backdrop);
-        column.anchorMin = new Vector2(0.5f, 0.5f);
-        column.anchorMax = new Vector2(0.5f, 0.5f);
-        column.pivot = new Vector2(0.5f, 0.5f);
-        column.sizeDelta = new Vector2(620f, 620f);
+        column.anchorMin = column.anchorMax = column.pivot = new Vector2(0.5f, 0.5f);
+        column.sizeDelta = new Vector2(680f, 300f);
         column.anchoredPosition = Vector2.zero;
 
         var layout = column.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.childAlignment = TextAnchor.UpperCenter;
+        layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
         layout.spacing = 6f;
 
-        // ── Masthead ──────────────────────────────────────────────────
-        AddText("Title", column, title, 68f, UIKit.Ink, TextAlignmentOptions.Center, 82f);
-        AddRule(column, 2f, 14f);
-        AddText("Subtitle", column, subtitle, 20f, UIKit.InkDim, TextAlignmentOptions.Center, 30f)
-            .fontStyle = FontStyles.Italic;
+        AddText("Title", column, title, 76f, UIKit.Ink, 92f);
+        AddRule(column);
+        AddText("Subtitle", column, subtitle, 21f, UIKit.InkDim, 32f).fontStyle = FontStyles.Italic;
 
-        AddSpacer(column, 26f);
+        AddSpacer(column, 34f);
 
-        // ── Body ──────────────────────────────────────────────────────
-        AddText("HeadingOne", column, sectionOneHeading, 24f, UIKit.Neon, TextAlignmentOptions.Left, 32f);
-        AddText("BodyOne", column, sectionOneBody, 17f, UIKit.Ink, TextAlignmentOptions.Left, 84f);
-
-        AddSpacer(column, 14f);
-
-        AddText("HeadingTwo", column, sectionTwoHeading, 24f, UIKit.Neon, TextAlignmentOptions.Left, 32f);
-        AddText("BodyTwo", column, BulletList(sectionTwoBody), 17f, UIKit.Ink, TextAlignmentOptions.Left, 110f);
-
-        AddSpacer(column, 26f);
-
-        // ── Enter button ──────────────────────────────────────────────
         Button enter = UIKit.TextButton("EnterButton", column, buttonLabel, 22f, UIKit.Neon);
         var enterSize = enter.gameObject.AddComponent<LayoutElement>();
-        enterSize.preferredHeight = 52f;
+        enterSize.preferredHeight = 54f;
         enterSize.preferredWidth = 200f;
         enter.onClick.AddListener(Dismiss);
     }
 
-    /// <summary>Turns one line per item into a bulleted block.</summary>
-    private static string BulletList(string lines)
-    {
-        string[] parts = lines.Split('\n');
-        for (int i = 0; i < parts.Length; i++)
-        {
-            string trimmed = parts[i].Trim();
-            parts[i] = string.IsNullOrEmpty(trimmed) ? "" : "·  " + trimmed;
-        }
-        return string.Join("\n", parts);
-    }
-
     private static TextMeshProUGUI AddText(string objectName, Transform parent, string text,
-                                           float size, Color color, TextAlignmentOptions align,
-                                           float height)
+                                           float size, Color color, float height)
     {
-        TextMeshProUGUI label = UIKit.Label(objectName, parent, text, size, color, align);
-        var element = label.gameObject.AddComponent<LayoutElement>();
-        element.preferredHeight = height;
+        TextMeshProUGUI label = UIKit.Label(objectName, parent, text, size, color,
+                                            TextAlignmentOptions.Center);
+        label.gameObject.AddComponent<LayoutElement>().preferredHeight = height;
         return label;
     }
 
-    private static void AddRule(Transform parent, float thickness, float height)
+    private static void AddRule(Transform parent)
     {
         RectTransform rule = UIKit.NewRect("Rule", parent);
         var image = rule.gameObject.AddComponent<Image>();
-        image.color = new Color(UIKit.Neon.r, UIKit.Neon.g, UIKit.Neon.b, 0.45f);
+        image.color = new Color(UIKit.Neon.r, UIKit.Neon.g, UIKit.Neon.b, 0.5f);
         image.raycastTarget = false;
 
         var element = rule.gameObject.AddComponent<LayoutElement>();
-        element.preferredHeight = thickness;
-        element.minHeight = thickness;
-
-        AddSpacer(parent, height - thickness);
+        element.preferredHeight = 2f;
+        element.minHeight = 2f;
     }
 
     private static void AddSpacer(Transform parent, float height)

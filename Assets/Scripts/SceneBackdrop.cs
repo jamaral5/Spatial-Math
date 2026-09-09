@@ -118,6 +118,23 @@ public class SceneBackdrop : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Recolours the sky at runtime. Used by the skin picker so the background can change
+    /// with the graph rather than fighting it.
+    /// </summary>
+    public void SetSkyColors(Color top, Color horizon, Color bottom)
+    {
+        skyTopColor = top;
+        skyHorizonColor = horizon;
+        skyBottomColor = bottom;
+
+        if (skyboxMaterial == null) return;
+
+        skyboxMaterial.SetColor("_TopColor", top);
+        skyboxMaterial.SetColor("_HorizonColor", horizon);
+        skyboxMaterial.SetColor("_BottomColor", bottom);
+    }
+
     // ───────────────────────────────────────────────────────────────────
     // Grid
     // ───────────────────────────────────────────────────────────────────

@@ -29,7 +29,7 @@ public class TangentContextMenu : MonoBehaviour
 
     void Start()
     {
-        if (targetCanvas == null) targetCanvas = FindFirstObjectByType<Canvas>();
+        if (targetCanvas == null) targetCanvas = UIKit.FindSceneCanvas();
         if (targetCanvas == null)
         {
             Debug.LogWarning("[TangentContextMenu] No Canvas in the scene — disabling.");

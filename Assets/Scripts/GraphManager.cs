@@ -101,6 +101,9 @@ public class GraphManager : MonoBehaviour
         gr.SetOpacity(graphOpacity);   // a freshly plotted graph joins at the current fade level
         bool ok = gr.SetEquation(equation);
 
+        // ...and wearing the current skin, if one has been chosen.
+        if (ok && skinApplied) gr.SetSkin(currentSkinTexture, currentSkinTint, currentSkinTiling);
+
         slotActive[slot] = ok;
         slotEquations[slot] = ok ? equation : "";
 
@@ -142,6 +145,27 @@ public class GraphManager : MonoBehaviour
     }
 
     public float GetGlobalOpacity() => graphOpacity;
+
+    // The skin currently in force, remembered so a graph plotted later joins wearing it
+    // rather than reverting to the material's own colour.
+    private Texture currentSkinTexture;
+    private Color currentSkinTint = Color.white;
+    private Vector2 currentSkinTiling = Vector2.one;
+    private bool skinApplied;
+
+    /// <summary>Applies a skin to every graph slot.</summary>
+    public void SetSkin(Texture texture, Color tint, Vector2 tiling)
+    {
+        currentSkinTexture = texture;
+        currentSkinTint = tint;
+        currentSkinTiling = tiling;
+        skinApplied = true;
+
+        for (int i = 0; i < MAX_EQUATIONS; i++)
+        {
+            if (graphSlots[i] != null) graphSlots[i].SetSkin(texture, tint, tiling);
+        }
+    }
 
     /// <summary>Toggle visibility of a slot without clearing its equation.</summary>
     public void ToggleSlotVisibility(int slot)

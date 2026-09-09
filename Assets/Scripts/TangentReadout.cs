@@ -39,7 +39,7 @@ public class TangentReadout : MonoBehaviour
             return;
         }
 
-        if (targetCanvas == null) targetCanvas = FindFirstObjectByType<Canvas>();
+        if (targetCanvas == null) targetCanvas = UIKit.FindSceneCanvas();
         if (targetCanvas == null)
         {
             Debug.LogWarning("[TangentReadout] No Canvas in the scene — disabling.");

@@ -44,6 +44,7 @@ public class GraphRenderer : MonoBehaviour
     private static readonly int DstBlendId  = Shader.PropertyToID("_DstBlend");
     private static readonly int ZWriteId    = Shader.PropertyToID("_ZWrite");
     private static readonly int AlphaClipId = Shader.PropertyToID("_AlphaClip");
+    private static readonly int BaseMapId   = Shader.PropertyToID("_BaseMap");
 
     // Our private copy of graphMaterial, plus the asset it was copied from so we only
     // re-copy when this slot is actually handed a different material.
@@ -164,6 +165,40 @@ public class GraphRenderer : MonoBehaviour
     private static void SetFloatIfPresent(Material m, int propertyId, float value)
     {
         if (m.HasProperty(propertyId)) m.SetFloat(propertyId, value);
+    }
+
+    /// <summary>
+    /// Applies a skin: a repeating pattern (or none), a tint, and how many times the
+    /// pattern repeats across the surface.
+    ///
+    /// BuildMesh already lays UVs 0..1 over the whole grid, so the texture stretches
+    /// across the shape and follows its folds rather than sitting flat.
+    /// </summary>
+    public void SetSkin(Texture texture, Color tint, Vector2 tiling)
+    {
+        ApplyMaterial();
+        if (runtimeMaterial == null) return;
+
+        if (runtimeMaterial.HasProperty(BaseMapId))
+        {
+            runtimeMaterial.SetTexture(BaseMapId, texture);
+            runtimeMaterial.SetTextureScale(BaseMapId, tiling);
+        }
+
+        // Tint multiplies the texture, so a patterned skin passes white through here and
+        // lets its own colours show. Alpha is left to ApplyOpacity.
+        if (runtimeMaterial.HasProperty(BaseColorId))
+        {
+            tint.a = opacity;
+            runtimeMaterial.SetColor(BaseColorId, tint);
+        }
+        if (runtimeMaterial.HasProperty(ColorId))
+        {
+            tint.a = opacity;
+            runtimeMaterial.SetColor(ColorId, tint);
+        }
+
+        ApplyOpacity();
     }
 
     /// <summary>Fades this graph. 0 = invisible, 1 = solid. Cheap enough to call every frame.</summary>

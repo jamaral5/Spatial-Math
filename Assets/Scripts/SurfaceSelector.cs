@@ -29,6 +29,9 @@ public class SurfacePointSelector : MonoBehaviour
 
     void Update()
     {
+        // Nothing is interactive until the user has left the title screen.
+        if (StartScreen.Exists && !StartScreen.Dismissed) return;
+
         // Only act on the frame the right mouse button is first pressed down.
         if (!Input.GetMouseButtonDown(1)) return;
 

@@ -36,10 +36,11 @@ public class GraphOpacityUI : MonoBehaviour
     public Color panelColor  = new Color(0.05f, 0.07f, 0.11f, 0.78f);
     public Color textColor   = new Color(0.82f, 0.88f, 0.96f, 1f);
     public Color grooveColor = new Color(1f, 1f, 1f, 0.16f);
-    public Color fillColor   = new Color(0.35f, 0.70f, 1f, 0.95f);
-    public Color handleColor = new Color(0.85f, 0.93f, 1f, 1f);
+    public Color fillColor   = new Color(1f, 0.82f, 0.29f, 0.95f);
+    public Color handleColor = new Color(1f, 0.93f, 0.72f, 1f);
 
     private TMP_Text readout;
+    private RectTransform builtPanel;   // only set when WE built the slider
 
     void Start()
     {
@@ -70,6 +71,19 @@ public class GraphOpacityUI : MonoBehaviour
 
         // Push the starting value through once so graph and readout agree immediately.
         HandleSliderMoved(slider.value);
+
+        // The controls belong to the app, not the title card — hold them back until the
+        // user has actually entered. Only ever hide the panel this script built: an
+        // Inspector-assigned slider could live anywhere, and hiding its parent might take
+        // half the interface with it.
+        if (builtPanel != null)
+        {
+            builtPanel.gameObject.SetActive(false);
+            StartScreen.WhenDismissed(() =>
+            {
+                if (builtPanel != null) builtPanel.gameObject.SetActive(true);
+            });
+        }
     }
 
     void OnDestroy()
@@ -111,7 +125,7 @@ public class GraphOpacityUI : MonoBehaviour
 
     private Slider BuildPanel()
     {
-        if (targetCanvas == null) targetCanvas = FindFirstObjectByType<Canvas>();
+        if (targetCanvas == null) targetCanvas = UIKit.FindSceneCanvas();
         if (targetCanvas == null)
         {
             Debug.LogWarning("[GraphOpacityUI] No Canvas in the scene — cannot build the slider.");
@@ -124,6 +138,8 @@ public class GraphOpacityUI : MonoBehaviour
         panelRect.pivot = new Vector2(0f, 1f);
         panelRect.anchoredPosition = panelOffset;
         panelRect.sizeDelta = panelSize;
+
+        builtPanel = panelRect;
 
         var panelImage = panelRect.gameObject.AddComponent<Image>();
         panelImage.sprite = BuiltinSprite("UI/Skin/UISprite.psd");

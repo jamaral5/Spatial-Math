@@ -22,7 +22,7 @@ public class EquationPanelStyler : MonoBehaviour
     public TMP_Text statusText;
 
     [Header("Corner Placement")]
-    public Vector2 panelSize = new Vector2(300f, 132f);
+    public Vector2 panelSize = new Vector2(400f, 168f);
 
     [Tooltip("Inset from the top-left corner of the canvas, in pixels.")]
     public Vector2 panelOffset = new Vector2(16f, -16f);
@@ -30,9 +30,14 @@ public class EquationPanelStyler : MonoBehaviour
     [Header("Input Box")]
     public Color gradientTop = new Color(0.13f, 0.17f, 0.25f, 0.96f);
     public Color gradientBottom = new Color(0.05f, 0.07f, 0.12f, 0.96f);
-    public Color glowColor = new Color(0.35f, 0.85f, 1f, 0.85f);
+    public Color glowColor = new Color(1f, 0.82f, 0.29f, 0.85f);
     public Color typedTextColor = new Color(0.94f, 0.97f, 1f);
-    public float inputHeight = 40f;
+    public float inputHeight = 52f;
+
+    [Header("Type Sizes")]
+    public float promptFontSize = 18f;
+    public float inputFontSize = 20f;
+    public float statusFontSize = 15f;
 
     void Start()
     {
@@ -49,6 +54,13 @@ public class EquationPanelStyler : MonoBehaviour
         PlaceInCorner();
         StyleInput();
         StyleText();
+
+        // Nothing to type into until the user has entered.
+        equationPanel.gameObject.SetActive(false);
+        StartScreen.WhenDismissed(() =>
+        {
+            if (equationPanel != null) equationPanel.gameObject.SetActive(true);
+        });
     }
 
     /// <summary>Fills in whatever was left unassigned in the Inspector.</summary>
@@ -131,8 +143,8 @@ public class EquationPanelStyler : MonoBehaviour
             inputRect.anchorMin = new Vector2(0f, 1f);
             inputRect.anchorMax = new Vector2(1f, 1f);
             inputRect.pivot = new Vector2(0.5f, 1f);
-            inputRect.offsetMin = new Vector2(0f, -inputHeight - 34f);
-            inputRect.offsetMax = new Vector2(0f, -34f);
+            inputRect.offsetMin = new Vector2(0f, -inputHeight - 38f);
+            inputRect.offsetMax = new Vector2(0f, -38f);
         }
     }
 
@@ -141,29 +153,45 @@ public class EquationPanelStyler : MonoBehaviour
         if (promptLabel != null)
         {
             promptLabel.color = UIKit.Neon;
-            promptLabel.fontSize = 15f;
+            promptLabel.fontSize = promptFontSize;
 
             var rect = promptLabel.rectTransform;
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(0.5f, 1f);
-            rect.offsetMin = new Vector2(2f, -26f);
-            rect.offsetMax = new Vector2(-2f, -4f);
+            rect.offsetMin = new Vector2(4f, -32f);
+            rect.offsetMax = new Vector2(-4f, -6f);
         }
 
-        if (equationInput != null && equationInput.textComponent != null)
-            equationInput.textComponent.color = typedTextColor;
+        if (equationInput != null)
+        {
+            if (equationInput.textComponent != null)
+            {
+                equationInput.textComponent.color = typedTextColor;
+                equationInput.textComponent.fontSize = inputFontSize;
+            }
+
+            // The placeholder is the line telling the user what to type, so it has to be
+            // as readable as the typed text itself.
+            if (equationInput.placeholder is TMP_Text placeholder)
+            {
+                placeholder.fontSize = inputFontSize;
+                placeholder.color = new Color(0.68f, 0.72f, 0.80f, 0.9f);
+            }
+
+            equationInput.pointSize = inputFontSize;
+        }
 
         if (statusText != null)
         {
-            statusText.fontSize = 13f;
+            statusText.fontSize = statusFontSize;
 
             var rect = statusText.rectTransform;
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(0.5f, 1f);
-            rect.offsetMin = new Vector2(2f, -inputHeight - 76f);
-            rect.offsetMax = new Vector2(-2f, -inputHeight - 40f);
+            rect.offsetMin = new Vector2(4f, -inputHeight - 92f);
+            rect.offsetMax = new Vector2(-4f, -inputHeight - 46f);
         }
     }
 }

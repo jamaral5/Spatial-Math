@@ -16,9 +16,32 @@ public static class UIKit
     // ─── Palette ───────────────────────────────────────────────────────
     public static readonly Color Ink        = new Color(0.90f, 0.94f, 1.00f);
     public static readonly Color InkDim     = new Color(0.62f, 0.70f, 0.82f);
-    public static readonly Color Neon       = new Color(0.35f, 0.85f, 1.00f);
-    public static readonly Color NeonSoft   = new Color(0.35f, 0.85f, 1.00f, 0.55f);
+    public static readonly Color Neon       = new Color(1.00f, 0.82f, 0.29f);
+    public static readonly Color NeonSoft   = new Color(1.00f, 0.82f, 0.29f, 0.55f);
     public static readonly Color PanelDark  = new Color(0.04f, 0.06f, 0.10f, 0.92f);
+
+    // ─── Canvas lookup ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Finds the Canvas that belongs to the SCENE, skipping the throwaway one the start
+    /// screen builds for itself.
+    ///
+    /// This matters: a plain FindFirstObjectByType&lt;Canvas&gt;() can return the start
+    /// screen's canvas, and anything parented to it is destroyed when the title screen
+    /// is dismissed. Lowest sorting order wins, since overlays sit above the scene UI.
+    /// </summary>
+    public static Canvas FindSceneCanvas()
+    {
+        Canvas best = null;
+
+        foreach (Canvas candidate in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+        {
+            if (candidate == StartScreen.OverlayCanvas) continue;
+            if (best == null || candidate.sortingOrder < best.sortingOrder) best = candidate;
+        }
+
+        return best;
+    }
 
     // ─── Rect plumbing ─────────────────────────────────────────────────
 
