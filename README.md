@@ -1,4 +1,4 @@
-# GraphCI Calc
+# Spatial Math
 
 A real-time 3D graphing calculator built in Unity and C#. Type in an equation and instantly see it rendered as an interactive, colored 3D surface you can rotate and explore. Click any point on the surface to see its slope and tangent plane — turning abstract calculus into something you can look at from every angle.
 
