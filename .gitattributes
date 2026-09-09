@@ -1,0 +1,119 @@
+# ---------------------------------------------------------------------
+# Spatial Math — git attributes
+#
+# Two jobs:
+#   1. Keep Unity's YAML files readable and mergeable in diffs.
+#   2. Route binary art assets through Git LFS instead of bloating history.
+# ---------------------------------------------------------------------
+
+# Let git decide what is text, and store text with LF inside the repository.
+* text=auto
+
+# ---------------------------------------------------------------------
+# Unity YAML
+#
+# The project is set to Force Text serialization, so every one of these is
+# plain YAML. Unity always writes LF; pinning eol=lf stops core.autocrlf
+# rewriting them to CRLF and turning every checkout into a whole-file diff.
+#
+# merge=unityyamlmerge hands conflicts to Unity's own YAML merge tool, which
+# understands object structure. It needs a one-time git config to enable —
+# see the note at the bottom of this file.
+# ---------------------------------------------------------------------
+*.unity              text eol=lf merge=unityyamlmerge
+*.prefab             text eol=lf merge=unityyamlmerge
+*.asset              text eol=lf merge=unityyamlmerge
+*.mat                text eol=lf merge=unityyamlmerge
+*.anim               text eol=lf merge=unityyamlmerge
+*.controller         text eol=lf merge=unityyamlmerge
+*.overrideController text eol=lf merge=unityyamlmerge
+*.playable           text eol=lf merge=unityyamlmerge
+*.mask               text eol=lf merge=unityyamlmerge
+*.physicMaterial     text eol=lf merge=unityyamlmerge
+*.physicsMaterial2D  text eol=lf merge=unityyamlmerge
+*.terrainlayer       text eol=lf merge=unityyamlmerge
+*.mixer              text eol=lf merge=unityyamlmerge
+*.preset             text eol=lf merge=unityyamlmerge
+*.guiskin            text eol=lf merge=unityyamlmerge
+*.fontsettings       text eol=lf merge=unityyamlmerge
+*.flare              text eol=lf merge=unityyamlmerge
+*.brush              text eol=lf merge=unityyamlmerge
+*.meta               text eol=lf merge=unityyamlmerge
+
+# ---------------------------------------------------------------------
+# Source and config
+# ---------------------------------------------------------------------
+*.cs             text eol=lf diff=csharp
+*.shader         text eol=lf
+*.shadergraph    text eol=lf
+*.hlsl           text eol=lf
+*.cginc          text eol=lf
+*.compute        text eol=lf
+*.asmdef         text eol=lf
+*.asmref         text eol=lf
+*.inputactions   text eol=lf
+*.json           text eol=lf
+*.md             text eol=lf
+*.txt            text eol=lf
+*.xml            text eol=lf
+*.yml            text eol=lf
+
+# ---------------------------------------------------------------------
+# Binary assets -> Git LFS
+#
+# These patterns apply to files added from here on. Anything already
+# committed as an ordinary blob (the TextMesh Pro fonts and sprites) stays
+# that way until it is next modified — no history is rewritten.
+# ---------------------------------------------------------------------
+
+# Images
+*.png    filter=lfs diff=lfs merge=lfs -text
+*.jpg    filter=lfs diff=lfs merge=lfs -text
+*.jpeg   filter=lfs diff=lfs merge=lfs -text
+*.gif    filter=lfs diff=lfs merge=lfs -text
+*.bmp    filter=lfs diff=lfs merge=lfs -text
+*.tga    filter=lfs diff=lfs merge=lfs -text
+*.tif    filter=lfs diff=lfs merge=lfs -text
+*.tiff   filter=lfs diff=lfs merge=lfs -text
+*.psd    filter=lfs diff=lfs merge=lfs -text
+*.exr    filter=lfs diff=lfs merge=lfs -text
+*.hdr    filter=lfs diff=lfs merge=lfs -text
+
+# 3D models
+*.fbx    filter=lfs diff=lfs merge=lfs -text
+*.obj    filter=lfs diff=lfs merge=lfs -text
+*.blend  filter=lfs diff=lfs merge=lfs -text
+*.dae    filter=lfs diff=lfs merge=lfs -text
+*.3ds    filter=lfs diff=lfs merge=lfs -text
+
+# Audio and video
+*.wav    filter=lfs diff=lfs merge=lfs -text
+*.mp3    filter=lfs diff=lfs merge=lfs -text
+*.ogg    filter=lfs diff=lfs merge=lfs -text
+*.aif    filter=lfs diff=lfs merge=lfs -text
+*.mp4    filter=lfs diff=lfs merge=lfs -text
+*.mov    filter=lfs diff=lfs merge=lfs -text
+
+# Fonts
+*.ttf    filter=lfs diff=lfs merge=lfs -text
+*.otf    filter=lfs diff=lfs merge=lfs -text
+
+# Native plugins and archives
+*.dll    filter=lfs diff=lfs merge=lfs -text
+*.so     filter=lfs diff=lfs merge=lfs -text
+*.dylib  filter=lfs diff=lfs merge=lfs -text
+*.a      filter=lfs diff=lfs merge=lfs -text
+*.bundle filter=lfs diff=lfs merge=lfs -text
+*.zip    filter=lfs diff=lfs merge=lfs -text
+*.unitypackage filter=lfs diff=lfs merge=lfs -text
+
+# ---------------------------------------------------------------------
+# One-time setup for the Unity YAML merge driver (per clone):
+#
+#   git config merge.unityyamlmerge.name "Unity SmartMerge"
+#   git config merge.unityyamlmerge.driver \
+#     '"C:/Program Files/Unity/Hub/Editor/6000.3.9f1/Editor/Data/Tools/UnityYAMLMerge.exe" merge -p %O %A %B %A'
+#
+# Without it git falls back to its normal line-based merge, which still
+# works — it is just less clever about Unity object structure.
+# ---------------------------------------------------------------------

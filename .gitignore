@@ -63,3 +63,7 @@ ignore.conf
 # OS files
 .DS_Store
 Thumbs.db
+
+# Unity crash-recovery snapshots (editor-local, regenerated on demand)
+/[Aa]ssets/_[Rr]ecovery/
+/[Aa]ssets/_[Rr]ecovery.meta
