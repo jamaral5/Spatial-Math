@@ -34,7 +34,9 @@ public class SceneBackdrop : MonoBehaviour
     public Color ambientColor = new Color(0.28f, 0.30f, 0.36f);
 
     [Header("Ground Grid")]
-    public bool showGrid = true;
+    [Tooltip("Off by default — the floor grid competes with the graph for attention. " +
+             "The gradient sky alone gives depth without the visual noise.")]
+    public bool showGrid = false;
 
     [Tooltip("How far the grid reaches from the origin, in world units.")]
     public float gridExtent = 26f;

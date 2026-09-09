@@ -53,6 +53,17 @@ public class TangentPlaneRenderer : MonoBehaviour
     public float labelFontSize = 3f;
     public Color labelColor = Color.white;
 
+    /// <summary>
+    /// Raised whenever a tangent plane is drawn, carrying the values already formatted
+    /// for display: the point in world space, the plane equation, and the two partials.
+    /// TangentReadout listens to this so the numbers can be shown in a corner panel
+    /// instead of floating over the surface.
+    /// </summary>
+    public System.Action<Vector3, string, string> OnTangentPlaneShown;
+
+    /// <summary>Raised when the tangent plane is taken back off the graph.</summary>
+    public System.Action OnTangentPlaneCleared;
+
     // ─── Private state (created automatically at runtime) ───────────────
     private GraphRenderer graphRenderer;   // which graph we're currently reading from
     private LineRenderer xLine;            // the x-direction tangent line
@@ -151,6 +162,25 @@ public class TangentPlaneRenderer : MonoBehaviour
             UpdateLabel(worldPoint, x0, y0, f0, fx, fy);
         else if (label != null)
             label.gameObject.SetActive(false);
+
+        // ── Step 7: hand the same numbers to whoever is displaying them ─
+        // Formatted here rather than in the listener so the world label and the corner
+        // panel can never drift out of agreement about how an equation is written.
+        OnTangentPlaneShown?.Invoke(
+            worldPoint,
+            $"f(x, y) = {f0:F2} {SignedTerm(fx, "x", x0)} {SignedTerm(fy, "y", y0)}",
+            $"df/dx = {fx:F2}     df/dy = {fy:F2}");
+    }
+
+    /// <summary>Takes the tangent plane, lines, marker and readout back off the graph.</summary>
+    public void ClearTangentPlane()
+    {
+        if (tangentPlane != null) tangentPlane.SetActive(false);
+        if (marker != null) marker.SetActive(false);
+        if (label != null) label.gameObject.SetActive(false);
+        HideLines();
+
+        OnTangentPlaneCleared?.Invoke();
     }
 
     // ───────────────────────────────────────────────────────────────────

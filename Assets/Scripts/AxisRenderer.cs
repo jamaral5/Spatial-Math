@@ -19,6 +19,10 @@ public class AxisRenderer : MonoBehaviour
     public int tickCount = 5;
     public float tickSize = 0.08f;
 
+    [Tooltip("How far the numeric tick labels sit off their axis. Small keeps them reading " +
+             "as rulings on the axis rather than as marks floating in space.")]
+    public float tickLabelOffset = 0.28f;
+
     [Header("Font")]
     public TMP_FontAsset labelFont;
 
@@ -73,9 +77,12 @@ public class AxisRenderer : MonoBehaviour
         CreateAxisLabel("+X", Vector3.right * (axisLength + 0.3f) + Vector3.up * labelFloatHeight, xColor, labelsRoot.transform, labelList);
 
         // --- Y Axis ---
+        // Both halves run the full axis length, so Y is symmetric with X and Z rather
+        // than a stub. Surfaces routinely dip well below zero and need the ruler there.
         CreateAxisLine(Vector3.zero, Vector3.up * axisLength, yColor, labelsRoot.transform);
-        CreateAxisLine(Vector3.zero, Vector3.down * axisLength * 0.5f, yColor, labelsRoot.transform);
+        CreateAxisLine(Vector3.zero, Vector3.down * axisLength, yColor, labelsRoot.transform);
         CreateAxisLabel("+Y", Vector3.up * (axisLength + 0.3f), yColor, labelsRoot.transform, labelList);
+        CreateAxisLabel("-Y", Vector3.down * (axisLength + 0.3f), yColor, labelsRoot.transform, labelList);
 
         // --- Z Axis ---
         CreateAxisLine(Vector3.zero, Vector3.forward * axisLength, zColor, labelsRoot.transform);
@@ -92,22 +99,24 @@ public class AxisRenderer : MonoBehaviour
             // X ticks
             CreateTick(Vector3.right * val, Vector3.up, xColor, labelsRoot.transform);
             CreateTick(Vector3.left * val, Vector3.up, xColor, labelsRoot.transform);
-            CreateTickLabel($"{val:F1}", Vector3.right * val + Vector3.up * labelFloatHeight * 0.6f, xColor, labelsRoot.transform, labelList);
-            CreateTickLabel($"-{val:F1}", Vector3.left * val + Vector3.up * labelFloatHeight * 0.6f, xColor, labelsRoot.transform, labelList);
+            CreateTickLabel($"{val:F1}", Vector3.right * val + Vector3.up * tickLabelOffset, xColor, labelsRoot.transform, labelList);
+            CreateTickLabel($"-{val:F1}", Vector3.left * val + Vector3.up * tickLabelOffset, xColor, labelsRoot.transform, labelList);
 
-            // Y ticks
+            // Y ticks — both directions, matching X and Z.
             CreateTick(Vector3.up * val, Vector3.right, yColor, labelsRoot.transform);
-            CreateTickLabel($"{val:F1}", Vector3.up * val + Vector3.right * 0.3f, yColor, labelsRoot.transform, labelList);
+            CreateTick(Vector3.down * val, Vector3.right, yColor, labelsRoot.transform);
+            CreateTickLabel($"{val:F1}", Vector3.up * val + Vector3.right * tickLabelOffset, yColor, labelsRoot.transform, labelList);
+            CreateTickLabel($"-{val:F1}", Vector3.down * val + Vector3.right * tickLabelOffset, yColor, labelsRoot.transform, labelList);
 
             // Z ticks
             CreateTick(Vector3.forward * val, Vector3.up, zColor, labelsRoot.transform);
             CreateTick(Vector3.back * val, Vector3.up, zColor, labelsRoot.transform);
-            CreateTickLabel($"{val:F1}", Vector3.forward * val + Vector3.up * labelFloatHeight * 0.6f, zColor, labelsRoot.transform, labelList);
-            CreateTickLabel($"-{val:F1}", Vector3.back * val + Vector3.up * labelFloatHeight * 0.6f, zColor, labelsRoot.transform, labelList);
+            CreateTickLabel($"{val:F1}", Vector3.forward * val + Vector3.up * tickLabelOffset, zColor, labelsRoot.transform, labelList);
+            CreateTickLabel($"-{val:F1}", Vector3.back * val + Vector3.up * tickLabelOffset, zColor, labelsRoot.transform, labelList);
         }
 
         // Origin label
-        CreateTickLabel("0", Vector3.up * labelFloatHeight * 0.5f, Color.white, labelsRoot.transform, labelList);
+        CreateTickLabel("0", Vector3.up * tickLabelOffset, Color.white, labelsRoot.transform, labelList);
 
         allLabels = labelList.ToArray();
     }
