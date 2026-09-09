@@ -19,6 +19,13 @@ public class GraphManager : MonoBehaviour
     [Range(0f, 1f)]
     public float graphOpacity = 0.65f;
 
+    [Header("Axis Fitting")]
+    [Tooltip("Grow or shrink the vertical axis to match the surface actually on screen.")]
+    public bool autoFitYAxis = true;
+
+    [Tooltip("Shortest the vertical axis is allowed to get, so a flat graph still has a ruler.")]
+    public float minYAxisLength = 2f;
+
     [Header("Startup")]
     [Tooltip("Leave OFF so the scene opens empty and nothing is plotted until the user " +
              "actually types an equation. Turn ON only for demos or screenshots.")]
@@ -76,8 +83,7 @@ public class GraphManager : MonoBehaviour
         }
 
         // Sync axis renderer with range
-        if (axisRenderer != null)
-            axisRenderer.SetAxisLength(graphRange);
+        FitAxes();
     }
 
     // ─── Public API ───────────────────────────────────────────────────
@@ -109,6 +115,10 @@ public class GraphManager : MonoBehaviour
 
         if (!ok) gr.gameObject.SetActive(false);
 
+        // After the slot state is settled — FitAxes reads slotActive to decide which
+        // surfaces to measure.
+        FitAxes();
+
         OnSlotChanged?.Invoke(slot, ok, equation);
         return ok;
     }
@@ -120,12 +130,53 @@ public class GraphManager : MonoBehaviour
         graphSlots[slot].gameObject.SetActive(false);
         slotActive[slot] = false;
         slotEquations[slot] = "";
+
+        FitAxes();
         OnSlotChanged?.Invoke(slot, true, "");
     }
 
     public void ClearAll()
     {
         for (int i = 0; i < MAX_EQUATIONS; i++) ClearSlot(i);
+    }
+
+    /// <summary>
+    /// Resizes the vertical axis to span whatever is currently plotted.
+    ///
+    /// The extent is taken from the meshes that were actually built, so it already
+    /// reflects the maxYClamp ceiling — a function that runs away to infinity is capped
+    /// there rather than stretching the axis without limit. AxisRenderer then caps the
+    /// number of ticks, so neither the axis length nor the label count can run away.
+    /// </summary>
+    public void FitAxes()
+    {
+        if (axisRenderer == null) return;
+
+        if (!autoFitYAxis)
+        {
+            axisRenderer.SetAxisLength(graphRange);
+            return;
+        }
+
+        float extent = 0f;
+        bool any = false;
+
+        for (int i = 0; i < MAX_EQUATIONS; i++)
+        {
+            if (!slotActive[i] || graphSlots[i] == null || !graphSlots[i].HasBounds) continue;
+
+            any = true;
+            extent = Mathf.Max(extent, Mathf.Abs(graphSlots[i].MinValue));
+            extent = Mathf.Max(extent, Mathf.Abs(graphSlots[i].MaxValue));
+        }
+
+        // Nothing plotted yet: fall back to the domain size so the scene still has axes.
+        if (!any) extent = graphRange;
+
+        // A little headroom so the surface does not touch the end of the ruler.
+        extent = Mathf.Clamp(extent * 1.1f, minYAxisLength, maxYClamp);
+
+        axisRenderer.SetAxisLengths(graphRange, extent);
     }
 
     /// <summary>
@@ -192,8 +243,8 @@ public class GraphManager : MonoBehaviour
             graphSlots[i].graphRange = graphRange;
             if (slotActive[i]) graphSlots[i].RebuildMesh();
         }
-        if (axisRenderer != null)
-            axisRenderer.SetAxisLength(graphRange);
+
+        FitAxes();
     }
 
     public void SetResolution(int res)

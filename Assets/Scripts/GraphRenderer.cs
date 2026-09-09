@@ -231,6 +231,16 @@ public class GraphRenderer : MonoBehaviour
 
     public string GetCurrentEquation() => currentEquation;
 
+    /// <summary>
+    /// The lowest and highest values the last build actually produced, and whether a
+    /// build has happened at all. BuildMesh already replaces NaN and infinity with zero
+    /// and clamps to maxYClamp, so these are always finite and bounded — which is what
+    /// lets the axes size themselves off a divergent function without blowing up.
+    /// </summary>
+    public bool HasBounds { get; private set; }
+    public float MinValue => minY;
+    public float MaxValue => maxY;
+
     public void RebuildMesh()
     {
         ApplyMaterial();
@@ -281,6 +291,8 @@ public class GraphRenderer : MonoBehaviour
                 if (y > maxY) maxY = y;
             }
         }
+
+        HasBounds = true;
 
         float yRange = Mathf.Max(maxY - minY, 0.001f);
 
