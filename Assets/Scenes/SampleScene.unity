@@ -316,7 +316,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
-  m_Antialiasing: 0
+  m_Antialiasing: 2
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -765,6 +765,11 @@ GameObject:
   - component: {fileID: 519356182}
   - component: {fileID: 519356181}
   - component: {fileID: 519356183}
+  - component: {fileID: 519356187}
+  - component: {fileID: 519356186}
+  - component: {fileID: 519356185}
+  - component: {fileID: 519356184}
+  - component: {fileID: 519356188}
   m_Layer: 0
   m_Name: UIManager
   m_TagString: Untagged
@@ -820,13 +825,109 @@ MonoBehaviour:
   slider: {fileID: 0}
   minOpacity: 0.05
   maxOpacity: 1
-  panelSize: {x: 220, y: 62}
-  panelOffset: {x: 0, y: -190}
+  anchor: {x: 0.5, y: 1}
+  panelSize: {x: 320, y: 76}
+  readoutFontSize: 18
+  panelOffset: {x: 0, y: -16}
   panelColor: {r: 0.05, g: 0.07, b: 0.11, a: 0.78}
   textColor: {r: 0.82, g: 0.88, b: 0.96, a: 1}
   grooveColor: {r: 1, g: 1, b: 1, a: 0.16}
   fillColor: {r: 0.35, g: 0.7, b: 1, a: 0.95}
   handleColor: {r: 0.85, g: 0.93, b: 1, a: 1}
+--- !u!114 &519356184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519356180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d65a2f37305a4924da8afbd49d0d0980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EquationPanelStyler
+  equationPanel: {fileID: 0}
+  equationInput: {fileID: 0}
+  promptLabel: {fileID: 0}
+  statusText: {fileID: 0}
+  panelSize: {x: 400, y: 180}
+  panelOffset: {x: 16, y: -16}
+  gradientTop: {r: 0.13, g: 0.17, b: 0.25, a: 0.96}
+  gradientBottom: {r: 0.05, g: 0.07, b: 0.12, a: 0.96}
+  glowColor: {r: 0.35, g: 0.85, b: 1, a: 0.85}
+  typedTextColor: {r: 0.94, g: 0.97, b: 1, a: 1}
+  inputHeight: 56
+  promptFontSize: 20.1
+  inputFontSize: 22
+  statusFontSize: 16
+--- !u!114 &519356185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519356180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 649da28c815c1874ba19b9a441435858, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TangentContextMenu
+  targetCanvas: {fileID: 0}
+  menuSize: {x: 190, y: 76}
+--- !u!114 &519356186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519356180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53186a58e7cf2224ab8057cd26ff8c52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TangentReadout
+  tangentPlaneRenderer: {fileID: 0}
+  targetCanvas: {fileID: 0}
+  panelSize: {x: 320, y: 132}
+  panelOffset: {x: -16, y: -16}
+--- !u!114 &519356187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519356180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43533387e689b7046bbe82f823c11f76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StartScreen
+  title: Spatial Math
+  subtitle: A learning solution by Jake Amaral
+  buttonLabel: Enter
+  acceptReturnKey: 1
+--- !u!114 &519356188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519356180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92ba8f4b9e5c37f4cb333e1d0f4acdca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkinPanelUI
+  graphManager: {fileID: 0}
+  sceneBackdrop: {fileID: 0}
+  targetCanvas: {fileID: 0}
+  anchor: {x: 0, y: 1}
+  buttonSize: {x: 170, y: 44}
+  buttonOffset: {x: 16, y: -212}
+  panelSize: {x: 240, y: 372}
+  buttonFontSize: 19
+  entryFontSize: 16
+  customImageTiling: 1
 --- !u!1 &667559777
 GameObject:
   m_ObjectHideFlags: 0
@@ -927,10 +1028,12 @@ MonoBehaviour:
   - {fileID: 2100000, guid: b42a943be5ddcf246b80a4b9902eec25, type: 2}
   - {fileID: 0}
   - {fileID: 0}
-  meshResolution: 60
+  meshResolution: 120
   graphRange: 5
   maxYClamp: 30
   graphOpacity: 0.65
+  autoFitYAxis: 1
+  minYAxisLength: 2
   plotOnStart: 0
   startupEquation: sin(x) * cos(y)
   axisRenderer: {fileID: 844162017}
@@ -967,6 +1070,7 @@ MonoBehaviour:
   mainCamera: {fileID: 330585545}
   marker: {fileID: 480294846}
   tangentPlaneRenderer: {fileID: 1944362057}
+  contextMenu: {fileID: 0}
 --- !u!4 &725122063
 Transform:
   m_ObjectHideFlags: 0
@@ -1135,12 +1239,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AxisRenderer
   axisLength: 5
+  yAxisLength: 5
   labelFloatHeight: 1.2
   xColor: {r: 1, g: 0.3, b: 0.3, a: 1}
   yColor: {r: 0.3, g: 1, b: 0.3, a: 1}
   zColor: {r: 0.3, g: 0.5, b: 1, a: 1}
   tickCount: 5
+  maxTicksPerAxis: 8
   tickSize: 0.08
+  tickLabelOffset: 0.28
   labelFont: {fileID: 0}
 --- !u!1 &871283319
 GameObject:
@@ -1833,12 +1940,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -2018,6 +2125,7 @@ GameObject:
   - component: {fileID: 2073218554}
   - component: {fileID: 2073218553}
   - component: {fileID: 2073218555}
+  - component: {fileID: 2073218556}
   m_Layer: 5
   m_Name: EquationPanel
   m_TagString: Untagged
@@ -2111,6 +2219,32 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &2073218556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2073218551}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d65a2f37305a4924da8afbd49d0d0980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EquationPanelStyler
+  equationPanel: {fileID: 0}
+  equationInput: {fileID: 0}
+  promptLabel: {fileID: 0}
+  statusText: {fileID: 0}
+  panelSize: {x: 400, y: 180}
+  panelOffset: {x: 16, y: -16}
+  gradientTop: {r: 0.13, g: 0.17, b: 0.25, a: 0.96}
+  gradientBottom: {r: 0.05, g: 0.07, b: 0.12, a: 0.96}
+  glowColor: {r: 1, g: 0.82, b: 0.29, a: 0.85}
+  typedTextColor: {r: 0.94, g: 0.97, b: 1, a: 1}
+  inputHeight: 56
+  promptFontSize: 20
+  inputFontSize: 22
+  statusFontSize: 16
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
