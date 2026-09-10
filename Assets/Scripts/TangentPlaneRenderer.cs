@@ -64,8 +64,20 @@ public class TangentPlaneRenderer : MonoBehaviour
     /// <summary>Raised when the tangent plane is taken back off the graph.</summary>
     public System.Action OnTangentPlaneCleared;
 
+    [Header("Plane Shape")]
+    public bool showPlane = true;
+    public PlaneShape planeShape = PlaneShape.Square;
+
+    [Tooltip("Plane radius as a fraction of the tangent-line half length. Below 1 the " +
+             "slope lines run out past the edge of the patch, which reads well.")]
+    public float planeRadiusScale = 0.7f;
+
     // ─── Private state (created automatically at runtime) ───────────────
     private GraphRenderer graphRenderer;   // which graph we're currently reading from
+    private Vector3 lastPoint;             // last point asked for, so styling can redraw
+    private bool hasShown;
+    private Material planeMaterial;        // our own copy of the plane's material
+    private Mesh planeMesh;                // our own generated plane outline
     private LineRenderer xLine;            // the x-direction tangent line
     private LineRenderer yLine;            // the y-direction tangent line
     private TextMeshPro label;             // the floating equation text
@@ -74,6 +86,18 @@ public class TangentPlaneRenderer : MonoBehaviour
     void Awake()
     {
         cam = Camera.main != null ? Camera.main.transform : null;
+    }
+
+    void Start()
+    {
+        ApplyPlaneShape();
+    }
+
+    void OnDestroy()
+    {
+        // Created with 'new', so nothing else will clean them up.
+        if (planeMaterial != null) Destroy(planeMaterial);
+        if (planeMesh != null) Destroy(planeMesh);
     }
 
     void LateUpdate()
@@ -137,9 +161,12 @@ public class TangentPlaneRenderer : MonoBehaviour
         // UP, which is what we want for a Unity Plane (whose face normal is +Y).
         Vector3 normal = Vector3.Cross(tangentZ, tangentX).normalized;
 
+        lastPoint = point;
+        hasShown = true;
+
         if (tangentPlane != null)
         {
-            tangentPlane.SetActive(true);
+            tangentPlane.SetActive(showPlane);
             tangentPlane.transform.position = worldPoint;
             tangentPlane.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal);
         }
@@ -172,9 +199,129 @@ public class TangentPlaneRenderer : MonoBehaviour
             $"df/dx = {fx:F2}     df/dy = {fy:F2}");
     }
 
+    // ─── Styling, driven by the Customize Tangent Plane panel ──────────
+
+    /// <summary>Redraws at the last picked point, so a style change shows immediately.</summary>
+    public void Refresh()
+    {
+        if (hasShown) ShowTangentPlaneAt(lastPoint, graphRenderer);
+    }
+
+    /// <summary>
+    /// Recolours the plane. Works on a private copy of the material — editing the shared
+    /// asset would change it on disk and survive leaving play mode.
+    /// </summary>
+    public void SetPlaneColor(Color color)
+    {
+        if (tangentPlane == null) return;
+
+        var renderer = tangentPlane.GetComponent<Renderer>();
+        if (renderer == null) return;
+
+        if (planeMaterial == null)
+        {
+            planeMaterial = new Material(renderer.sharedMaterial);
+            planeMaterial.name = "Tangent Plane (runtime copy)";
+            MakeTransparent(planeMaterial);
+            renderer.sharedMaterial = planeMaterial;
+        }
+
+        if (planeMaterial.HasProperty("_BaseColor")) planeMaterial.SetColor("_BaseColor", color);
+        if (planeMaterial.HasProperty("_Color")) planeMaterial.SetColor("_Color", color);
+    }
+
+    /// <summary>Same alpha-blend setup GraphRenderer uses, so plane opacity works at all.</summary>
+    private static void MakeTransparent(Material m)
+    {
+        if (m.HasProperty("_Surface")) m.SetFloat("_Surface", 1f);
+        if (m.HasProperty("_Blend")) m.SetFloat("_Blend", 0f);
+        if (m.HasProperty("_SrcBlend")) m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        if (m.HasProperty("_DstBlend")) m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        if (m.HasProperty("_ZWrite")) m.SetFloat("_ZWrite", 0f);
+
+        m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        m.SetOverrideTag("RenderType", "Transparent");
+        m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+    }
+
+    public void SetLineColors(Color alongX, Color alongY)
+    {
+        xLineColor = alongX;
+        yLineColor = alongY;
+
+        if (xLine != null) { xLine.startColor = alongX; xLine.endColor = alongX; }
+        if (yLine != null) { yLine.startColor = alongY; yLine.endColor = alongY; }
+    }
+
+    public void SetTangentLinesVisible(bool visible)
+    {
+        showTangentLines = visible;
+
+        if (!visible) HideLines();
+        else Refresh();
+    }
+
+    public void SetPlaneVisible(bool visible)
+    {
+        showPlane = visible;
+        if (tangentPlane != null) tangentPlane.SetActive(visible && hasShown);
+    }
+
+    /// <summary>How far the tangent lines reach from the point. Resizes the plane too.</summary>
+    public void SetSpan(float halfLength)
+    {
+        lineHalfLength = halfLength;
+        ApplyPlaneShape();
+        Refresh();
+    }
+
+    /// <summary>Cuts the plane to a different outline: square, circle, triangle...</summary>
+    public void SetPlaneShape(PlaneShape shape)
+    {
+        planeShape = shape;
+        ApplyPlaneShape();
+    }
+
+    public PlaneShape CurrentShape => planeShape;
+
+    /// <summary>
+    /// Rebuilds the plane mesh at the current shape and span.
+    ///
+    /// The scene ships a Unity Plane primitive squashed to (0.2, 1, 0.2). Once we supply
+    /// our own mesh the radius is baked into the vertices, so the transform scale is reset
+    /// to one — otherwise every size would come out multiplied by that 0.2.
+    /// </summary>
+    private void ApplyPlaneShape()
+    {
+        if (tangentPlane == null) return;
+
+        var filter = tangentPlane.GetComponent<MeshFilter>();
+        if (filter == null) return;
+
+        if (planeMesh != null) Destroy(planeMesh);
+        planeMesh = PlaneShapes.Build(planeShape, lineHalfLength * Mathf.Max(0.05f, planeRadiusScale));
+
+        filter.sharedMesh = planeMesh;
+        tangentPlane.transform.localScale = Vector3.one;
+
+        // Keep the collider in step, if the object has one.
+        var collider = tangentPlane.GetComponent<MeshCollider>();
+        if (collider != null)
+        {
+            collider.sharedMesh = null;
+            collider.sharedMesh = planeMesh;
+        }
+    }
+
+    public float GetSpan() => lineHalfLength;
+    public bool TangentLinesVisible => showTangentLines;
+    public bool PlaneVisible => showPlane;
+
     /// <summary>Takes the tangent plane, lines, marker and readout back off the graph.</summary>
     public void ClearTangentPlane()
     {
+        hasShown = false;
         if (tangentPlane != null) tangentPlane.SetActive(false);
         if (marker != null) marker.SetActive(false);
         if (label != null) label.gameObject.SetActive(false);

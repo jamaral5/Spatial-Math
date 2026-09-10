@@ -36,6 +36,37 @@ public static class UIKit
         neonOutline = null;
     }
 
+    // ─── Duplicate guard ───────────────────────────────────────────────
+
+    /// <summary>
+    /// True if another component of the same type already exists in the scene and should
+    /// be the one that runs.
+    ///
+    /// These components build their own UI, so a second copy silently draws a second
+    /// button on top of the first. The lowest instance id wins, which is arbitrary but
+    /// stable, and the warning names both GameObjects so the stray one is easy to find.
+    /// </summary>
+    public static bool IsDuplicate(MonoBehaviour self)
+    {
+        Object[] all = Object.FindObjectsByType(self.GetType(),
+                                                FindObjectsInactive.Include,
+                                                FindObjectsSortMode.None);
+
+        foreach (Object other in all)
+        {
+            if (other == self || other.GetInstanceID() >= self.GetInstanceID()) continue;
+
+            string owner = other is MonoBehaviour mb ? mb.gameObject.name : "another object";
+            Debug.LogWarning(
+                $"[{self.GetType().Name}] More than one of these is in the scene — on " +
+                $"'{owner}' and on '{self.gameObject.name}'. Disabling the copy on " +
+                $"'{self.gameObject.name}'. Delete it to silence this.");
+            return true;
+        }
+
+        return false;
+    }
+
     // ─── Canvas lookup ─────────────────────────────────────────────────
 
     /// <summary>

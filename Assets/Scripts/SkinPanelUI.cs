@@ -1,122 +1,54 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// The bottom-left "Skins" button and the panel it opens.
+/// The "Customize Graph" button and the skin list it opens.
 ///
 /// Each preset restyles both the surface and the sky together, so the two never clash.
 /// The last entry loads an image from disk and wraps it over the surface using the UVs
 /// the mesh already carries.
 /// </summary>
-[AddComponentMenu("Spatial Math/Skin Panel UI")]
-public class SkinPanelUI : MonoBehaviour
+[AddComponentMenu("Spatial Math/Customize Graph Panel")]
+public class SkinPanelUI : ToolPanelUI
 {
     [Header("References (found automatically if left empty)")]
     public GraphManager graphManager;
     public SceneBackdrop sceneBackdrop;
-    public Canvas targetCanvas;
 
-    [Header("Layout")]
-    [Tooltip("Which corner of the screen the button hangs off. (0,1) is top-left, " +
-             "(0,0) bottom-left. The list opens away from that edge.")]
-    public Vector2 anchor = new Vector2(0f, 1f);
-
-    public Vector2 buttonSize = new Vector2(170f, 44f);
-    public Vector2 buttonOffset = new Vector2(16f, -212f);
-    public Vector2 panelSize = new Vector2(240f, 372f);
-
-    [Header("Type Sizes")]
-    public float buttonFontSize = 19f;
-    public float entryFontSize = 16f;
+    [Header("Label")]
+    public string buttonLabel = "Customize Graph";
 
     [Tooltip("How many times a pattern repeats across a custom uploaded image.")]
     public float customImageTiling = 1f;
 
-    private RectTransform panel;
-    private RectTransform button;
     private Texture2D customTexture;
 
-    void Start()
+    protected override string ButtonLabel => buttonLabel;
+
+    /// <summary>Default placement when the component is first added: the upper slot.</summary>
+    private void Reset()
+    {
+        stackOrder = 0;
+    }
+
+    protected override bool Initialise()
     {
         if (graphManager == null) graphManager = FindFirstObjectByType<GraphManager>();
         if (sceneBackdrop == null) sceneBackdrop = FindFirstObjectByType<SceneBackdrop>();
 
-        if (targetCanvas == null) targetCanvas = UIKit.FindSceneCanvas();
-        if (targetCanvas == null || graphManager == null)
+        if (graphManager == null)
         {
-            Debug.LogWarning("[SkinPanelUI] Needs a Canvas and a GraphManager — disabling.");
-            enabled = false;
-            return;
+            Debug.LogWarning("[SkinPanelUI] No GraphManager in the scene — disabling.");
+            return false;
         }
 
-        Build();
-
-        // Hidden until the user leaves the title screen, like the rest of the controls.
-        button.gameObject.SetActive(false);
-        StartScreen.WhenDismissed(() =>
-        {
-            if (button != null) button.gameObject.SetActive(true);
-        });
+        return true;
     }
 
-    /// <summary>Live layout tweaking during Play mode. See GraphOpacityUI.OnValidate.</summary>
-    void OnValidate()
+    protected override void Populate(RectTransform column)
     {
-        if (!Application.isPlaying || button == null || panel == null) return;
-
-        PlaceWidgets();
-    }
-
-    /// <summary>
-    /// Positions the button and its list. Anchored to the top of the screen the list
-    /// drops downward; anchored to the bottom it rises, so it never runs off-screen.
-    /// </summary>
-    private void PlaceWidgets()
-    {
-        UIKit.Corner(button, anchor, buttonSize, buttonOffset);
-
-        bool opensDownward = anchor.y > 0.5f;
-        float gap = buttonSize.y + 8f;
-
-        UIKit.Corner(panel, anchor, panelSize,
-                     new Vector2(buttonOffset.x,
-                                 opensDownward ? buttonOffset.y - gap : buttonOffset.y + gap));
-    }
-
-    void OnDestroy()
-    {
-        if (customTexture != null) Destroy(customTexture);
-    }
-
-    // ───────────────────────────────────────────────────────────────────
-
-    private void Build()
-    {
-        // ── The bottom-left button ────────────────────────────────────
-        Button toggle = UIKit.TextButton("SkinsButton", targetCanvas.transform, "Skins",
-                                         buttonFontSize, UIKit.NeonSoft);
-        button = toggle.GetComponent<RectTransform>();
-        toggle.onClick.AddListener(TogglePanel);
-
-        // ── The list it opens, stacked clear of the button ────────────
-        panel = UIKit.NeonPanel("SkinPanel", targetCanvas.transform, UIKit.PanelDark, UIKit.NeonSoft);
-
-        PlaceWidgets();
-
-        RectTransform column = UIKit.Stretch(UIKit.NewRect("Column", panel), 12f);
-        var layout = column.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-        layout.spacing = 5f;
-
-        var heading = UIKit.Label("Heading", column, "GRAPH SKIN", 11f, UIKit.Neon,
-                                  TMPro.TextAlignmentOptions.Left);
-        heading.characterSpacing = 6f;
-        heading.gameObject.AddComponent<LayoutElement>().preferredHeight = 18f;
+        AddHeading(column, "Graph skin");
 
         foreach (GraphSkin skin in SkinLibrary.Presets())
         {
@@ -125,20 +57,11 @@ public class SkinPanelUI : MonoBehaviour
         }
 
         AddEntry(column, "Upload image…", LoadCustomImage);
-
-        panel.gameObject.SetActive(false);
     }
 
-    private void AddEntry(Transform parent, string label, System.Action action)
+    private void OnDestroy()
     {
-        Button entry = UIKit.TextButton(label, parent, label, entryFontSize, new Color(1f, 1f, 1f, 0.10f));
-        entry.gameObject.AddComponent<LayoutElement>().preferredHeight = entryFontSize + 16f;
-        entry.onClick.AddListener(() => action?.Invoke());
-    }
-
-    private void TogglePanel()
-    {
-        if (panel != null) panel.gameObject.SetActive(!panel.gameObject.activeSelf);
+        if (customTexture != null) Destroy(customTexture);
     }
 
     // ───────────────────────────────────────────────────────────────────

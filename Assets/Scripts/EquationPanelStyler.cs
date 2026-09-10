@@ -44,6 +44,13 @@ public class EquationPanelStyler : MonoBehaviour
 
     void Start()
     {
+        // A second copy would add a second neon glow over the same input field.
+        if (UIKit.IsDuplicate(this))
+        {
+            enabled = false;
+            return;
+        }
+
         Resolve();
 
         if (equationPanel == null)

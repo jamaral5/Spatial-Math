@@ -56,20 +56,32 @@ public class SurfacePointSelector : MonoBehaviour
         // Build a ray from the camera through the mouse position on screen.
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        // Raycast returns true if the ray struck a collider; 'hit' is filled with
-        // details (the world point, and which object/collider we touched).
-        if (!Physics.Raycast(ray, out RaycastHit hit))
-        {
-            if (contextMenu != null) contextMenu.Close();
-            return;
-        }
+        // RaycastAll rather than Raycast, because the graph is not the only collider in
+        // the scene: the tangent plane and the marker ball both have one. A plain
+        // Raycast returns whichever is nearest, so once a tangent plane was on screen it
+        // sat between the camera and the surface and swallowed every later click.
+        //
+        // Collect everything, then take the nearest hit that is actually a graph.
+        RaycastHit[] hits = Physics.RaycastAll(ray);
 
-        // Ask the object we hit whether it is a graph surface. If you ever show several
-        // equations at once, this guarantees we read slopes from the SAME surface the
-        // user actually clicked, not just the first one found.
-        GraphRenderer hitGraph = hit.collider != null
-            ? hit.collider.GetComponent<GraphRenderer>()
-            : null;
+        GraphRenderer hitGraph = null;
+        float nearest = float.MaxValue;
+        Vector3 nearestPoint = Vector3.zero;
+
+        foreach (RaycastHit candidate in hits)
+        {
+            if (candidate.collider == null) continue;
+
+            // Asking the collider whether it is a graph surface also keeps this correct
+            // when several equations are on screen: we read slopes from the SAME surface
+            // the user clicked, not just the first one found.
+            var graph = candidate.collider.GetComponent<GraphRenderer>();
+            if (graph == null || candidate.distance >= nearest) continue;
+
+            nearest = candidate.distance;
+            nearestPoint = candidate.point;
+            hitGraph = graph;
+        }
 
         if (hitGraph == null)
         {
@@ -77,7 +89,7 @@ public class SurfacePointSelector : MonoBehaviour
             return;
         }
 
-        candidatePoint = hit.point;
+        candidatePoint = nearestPoint;
         candidateGraph = hitGraph;
 
         // Show the marker straight away so it is obvious which point the menu refers to.
