@@ -155,19 +155,9 @@ public class AxisRenderer : MonoBehaviour
     private void BuildTicks(float length, Vector3 direction, Vector3 across, Color color,
                             Transform parent, List<TextMeshPro> labels)
     {
-        float step = NiceStep(length / Mathf.Max(1, tickCount));
-
-        // The cap is what keeps a huge vertical range from generating an unbounded pile
-        // of GameObjects. Past it the ticks simply get coarser.
-        int count = Mathf.FloorToInt(length / step + 0.0001f);
-        if (count > maxTicksPerAxis)
-        {
-            step = length / maxTicksPerAxis;
-            step = NiceStep(step);
-            count = Mathf.Min(maxTicksPerAxis, Mathf.FloorToInt(length / step + 0.0001f));
-        }
-
-        string format = "F" + Mathf.Clamp(Mathf.CeilToInt(-Mathf.Log10(step)), 0, 3);
+        float step = ChooseTickStep(length);
+        int count = Mathf.Min(maxTicksPerAxis, Mathf.FloorToInt(length / step + 0.0001f));
+        string format = "F" + DecimalsFor(step);
 
         for (int i = 1; i <= count; i++)
         {
@@ -183,22 +173,68 @@ public class AxisRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Rounds a rough spacing up to the nearest 1, 2 or 5 times a power of ten, which is
-    /// what makes tick labels read as 0.5 / 1 / 2 / 5 / 10 rather than 0.7333.
+    /// Picks a readable tick spacing for an axis of the given length.
+    ///
+    /// Walks the 1 / 2 / 2.5 / 5 / 10 ladder across three decades and keeps whichever
+    /// step puts the tick count closest to tickCount without passing maxTicksPerAxis.
+    ///
+    /// The previous version always rounded the spacing UP to the next rung, which is why
+    /// a stretched axis lost its ticks: a 30-unit axis asking for 5 ticks got a step of
+    /// 10 and ended up with three marks on it. Choosing the nearest rung instead keeps
+    /// the ruler populated at any length.
     /// </summary>
-    private static float NiceStep(float rough)
+    private float ChooseTickStep(float length)
     {
+        int target = Mathf.Clamp(tickCount, 1, Mathf.Max(1, maxTicksPerAxis));
+        float rough = length / target;
         if (rough <= 0f || float.IsNaN(rough) || float.IsInfinity(rough)) return 1f;
 
         float magnitude = Mathf.Pow(10f, Mathf.Floor(Mathf.Log10(rough)));
-        float normalised = rough / magnitude;                      // lands in 1..10
+        float[] ladder = { 1f, 2f, 2.5f, 5f, 10f };
 
-        float nice = normalised <= 1f ? 1f
-                   : normalised <= 2f ? 2f
-                   : normalised <= 5f ? 5f
-                   : 10f;
+        float chosen = 0f;
+        int bestDistance = int.MaxValue;
 
-        return nice * magnitude;
+        for (int decade = -1; decade <= 1; decade++)
+        {
+            float scale = magnitude * Mathf.Pow(10f, decade);
+
+            foreach (float rung in ladder)
+            {
+                float candidate = rung * scale;
+                if (candidate <= 0f) continue;
+
+                int count = Mathf.FloorToInt(length / candidate + 0.0001f);
+                if (count < 1 || count > maxTicksPerAxis) continue;
+
+                int distance = Mathf.Abs(count - target);
+                if (distance >= bestDistance) continue;
+
+                bestDistance = distance;
+                chosen = candidate;
+            }
+        }
+
+        // Nothing on the ladder fitted — a very short or awkwardly sized axis. Divide
+        // evenly instead, which always yields exactly the target number of ticks even if
+        // the numbers read less neatly.
+        return chosen > 0f ? chosen : length / target;
+    }
+
+    /// <summary>How many decimal places it takes to write this step exactly.</summary>
+    private static int DecimalsFor(float step)
+    {
+        int decimals = 0;
+        float probe = step;
+
+        // Without this a 2.5 step formatted as "F0" and every label rounded to 3.
+        while (decimals < 3 && Mathf.Abs(probe - Mathf.Round(probe)) > 0.0001f)
+        {
+            probe *= 10f;
+            decimals++;
+        }
+
+        return decimals;
     }
 
     /// <summary>One shared material per colour, created on first use.</summary>

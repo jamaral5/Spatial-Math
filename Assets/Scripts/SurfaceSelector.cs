@@ -25,6 +25,19 @@ public class SurfacePointSelector : MonoBehaviour
     {
         if (mainCamera == null) mainCamera = Camera.main;
         if (contextMenu == null) contextMenu = FindFirstObjectByType<TangentContextMenu>();
+
+        // Unity's mesh raycasts skip back faces by default, and that quietly broke
+        // picking on any surface that curves away from you.
+        //
+        // The graph is a height field, so RecalculateNormals points every normal broadly
+        // upward. On a bowl like x^2 + y^2 that means the wall NEAREST the camera has its
+        // normal facing away from you — it is a back face — so the ray passed straight
+        // through it and reported the far wall instead. Clicking the front of the bowl
+        // gave you a tangent plane on the back.
+        //
+        // Letting queries hit back faces makes the closest surface win, which is what a
+        // click on a surface is supposed to mean.
+        Physics.queriesHitBackfaces = true;
     }
 
     void Update()
